@@ -4,6 +4,8 @@
 .env.*.local
 *.pem
 *.key
+# Test-only TLS fixtures are neither secret nor usable outside the suite.
+!server/test/fixtures/tls/*.pem
 
 # Dependencies
 node_modules/
