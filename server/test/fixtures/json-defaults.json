@@ -1,0 +1,18 @@
+{
+  "LocaleCode": "en",
+  "SOGoLoginModule": "Mail",
+  "SOGoMailAutoReplyText": "",
+  "Vacation": {
+    "daysBetweenResponse": 7,
+    "enabled": 0,
+    "autoReplyEmailAddresses": ["user@example.org"],
+    "customSubject": "probe",
+    "autoReplyText": "probe",
+    "startDateEnabled": 0,
+    "endDateEnabled": 0,
+    "ignoreLists": 0,
+    "customSubjectEnabled": 1,
+    "weekdaysEnabled": 0,
+    "days": []
+  }
+}

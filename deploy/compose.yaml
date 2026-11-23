@@ -14,7 +14,7 @@ services:
       SOGO_BASE_URL: http://sogo:20000
       IMAP_HOST: dovecot
       IMAP_PORT: '993'
-      IMAP_TLS: 'true'
+      IMAP_SECURITY: tls
     networks:
       - mailcow
     # No published ports on purpose: Mailcow's nginx proxies /ooo to this

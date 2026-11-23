@@ -2,7 +2,9 @@ export type ErrorCode =
   | 'INVALID_REQUEST'
   | 'NOT_FOUND'
   | 'BAD_CREDENTIALS'
+  | 'MAILBOX_NOT_FOUND'
   | 'RATE_LIMITED'
+  | 'IMAP_UNAVAILABLE'
   | 'SOGO_UNAVAILABLE'
   | 'INTERNAL'
 
@@ -10,7 +12,9 @@ const STATUS_BY_CODE: Record<ErrorCode, number> = {
   INVALID_REQUEST: 400,
   NOT_FOUND: 404,
   BAD_CREDENTIALS: 401,
+  MAILBOX_NOT_FOUND: 404,
   RATE_LIMITED: 429,
+  IMAP_UNAVAILABLE: 503,
   SOGO_UNAVAILABLE: 503,
   INTERNAL: 500,
 }
@@ -22,6 +26,7 @@ const STATUS_BY_CODE: Record<ErrorCode, number> = {
  */
 const RETRYABLE_BY_CODE: ReadonlySet<ErrorCode> = new Set<ErrorCode>([
   'RATE_LIMITED',
+  'IMAP_UNAVAILABLE',
   'SOGO_UNAVAILABLE',
   'INTERNAL',
 ])

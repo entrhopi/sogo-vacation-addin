@@ -21,6 +21,26 @@ const ConfigSchema = z.object({
         .filter((item) => item.length > 0),
     )
     .pipe(z.array(z.url())),
+
+  // SOGo runs inside the mailcow docker network; the public /SOGo route cannot
+  // be used because nginx overwrites the proxy-auth headers with its own session.
+  SOGO_BASE_URL: z.url().default('http://sogo:20000'),
+  SOGO_TIMEOUT_MS: z.coerce.number().int().min(100).max(60_000).default(5_000),
+
+  // Credentials are verified against Dovecot before SOGo is touched, because
+  // SOGo trusts the proxy header and does not check passwords itself.
+  IMAP_HOST: z.string().min(1).default('dovecot'),
+  IMAP_PORT: z.coerce.number().int().min(1).max(65_535).default(993),
+  IMAP_SECURITY: z.enum(['tls', 'starttls', 'none']).default('tls'),
+  IMAP_TIMEOUT_MS: z.coerce.number().int().min(100).max(60_000).default(5_000),
+}).superRefine((config, ctx) => {
+  if (config.NODE_ENV === 'production' && config.IMAP_SECURITY === 'none') {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['IMAP_SECURITY'],
+      message: 'plaintext IMAP is not allowed in production',
+    })
+  }
 })
 
 export type Config = z.infer<typeof ConfigSchema>
