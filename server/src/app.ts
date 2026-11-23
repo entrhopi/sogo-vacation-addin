@@ -5,14 +5,23 @@ import Fastify, {
   type FastifyInstance,
 } from 'fastify'
 import type { Config } from './config.js'
+import { createVacationDeps } from './deps.js'
 import { AppError, toErrorBody } from './lib/errors.js'
 import { buildLoggerOptions } from './lib/logger.js'
 import { registerHealthRoutes } from './routes/health.js'
+import { registerVacationRoutes, type VacationRouteDeps } from './routes/vacation.js'
 
-const ALLOWED_METHODS = ['GET', 'POST', 'OPTIONS']
+const ALLOWED_METHODS = ['GET', 'PUT', 'POST', 'OPTIONS']
 const ALLOWED_HEADERS = ['content-type', 'authorization', 'x-request-id']
 
-export async function buildApp(config: Config): Promise<FastifyInstance> {
+export interface AppDependencies {
+  vacation: VacationRouteDeps
+}
+
+export async function buildApp(
+  config: Config,
+  dependencies: Partial<AppDependencies> = {},
+): Promise<FastifyInstance> {
   const app = Fastify({
     logger:
       config.LOG_LEVEL === 'silent' ? false : buildLoggerOptions(config.LOG_LEVEL),
@@ -60,6 +69,24 @@ export async function buildApp(config: Config): Promise<FastifyInstance> {
       return
     }
 
+    // Other Fastify client errors: unparseable JSON, wrong content type, body
+    // too large. Keep the status, normalise the body.
+    if (
+      typeof error.statusCode === 'number' &&
+      error.statusCode >= 400 &&
+      error.statusCode < 500
+    ) {
+      const invalid = new AppError('INVALID_REQUEST', 'Invalid request', {
+        retryable: false,
+      })
+      request.log.warn(
+        { code: error.code, detail: error.message },
+        'client request rejected',
+      )
+      reply.code(error.statusCode).send(toErrorBody(invalid, request.id))
+      return
+    }
+
     // Unexpected: log the details (never a response body) and answer generically.
     request.log.error(
       { err: { name: error.name, message: error.message, stack: error.stack } },
@@ -75,6 +102,7 @@ export async function buildApp(config: Config): Promise<FastifyInstance> {
   })
 
   await registerHealthRoutes(app)
+  await registerVacationRoutes(app, dependencies.vacation ?? createVacationDeps(config))
 
   return app
 }

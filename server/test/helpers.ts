@@ -1,5 +1,5 @@
 import type { FastifyInstance } from 'fastify'
-import { buildApp } from '../src/app.js'
+import { buildApp, type AppDependencies } from '../src/app.js'
 import { loadConfig, type Config } from '../src/config.js'
 
 export const ALLOWED_ORIGIN = 'https://addin.example'
@@ -11,6 +11,7 @@ export interface TestApp {
 
 export async function makeApp(
   overrides: Record<string, string> = {},
+  dependencies: Partial<AppDependencies> = {},
 ): Promise<TestApp> {
   const config = loadConfig({
     NODE_ENV: 'test',
@@ -20,6 +21,6 @@ export async function makeApp(
     ADDIN_ORIGINS: ALLOWED_ORIGIN,
     ...overrides,
   })
-  const app = await buildApp(config)
+  const app = await buildApp(config, dependencies)
   return { app, config }
 }
