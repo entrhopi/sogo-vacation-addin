@@ -4,7 +4,7 @@ Status: **closed.** Auth, read and write all proven live against the test mailbo
 
 - Target: `https://mail.example.org/SOGo` (Mailcow, SOGo **5.12.13-1**, Angular UI)
 - Internal endpoint: `http://sogo:20000` (docker network alias `sogo`, port not published)
-- Test mailbox: `user@example.org` (see `.env.local`, gitignored)
+- Test mailbox: `user@example.org` (placeholder; the original test mailbox was temporary)
 
 Legend: *[verified live]* = confirmed against the instance · *[source]* = read from the
 SOGo / Mailcow source for these exact versions · *[assumed]* = still needs confirmation.
