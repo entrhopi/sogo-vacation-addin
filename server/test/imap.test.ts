@@ -144,6 +144,7 @@ describe('verifyMailboxCredentials', () => {
     )
 
     expect(error).toMatchObject({ code: 'IMAP_UNAVAILABLE', retryable: true })
+    expect((error as AppError).cause).toBeInstanceOf(Error)
   })
 
   it('times out instead of hanging when the server never greets', async () => {

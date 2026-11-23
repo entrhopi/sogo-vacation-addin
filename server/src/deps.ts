@@ -17,6 +17,10 @@ export function createVacationDeps(config: Config): VacationRouteDeps {
           port: config.IMAP_PORT,
           security: config.IMAP_SECURITY,
           timeoutMs: config.IMAP_TIMEOUT_MS,
+          tls: {
+            servername: config.IMAP_TLS_SERVERNAME ?? config.IMAP_HOST,
+            rejectUnauthorized: config.IMAP_TLS_REJECT_UNAUTHORIZED,
+          },
         },
         { username: mailbox, password },
       ),

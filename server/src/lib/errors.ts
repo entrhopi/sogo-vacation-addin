@@ -34,6 +34,8 @@ const RETRYABLE_BY_CODE: ReadonlySet<ErrorCode> = new Set<ErrorCode>([
 export interface AppErrorOptions {
   retryable?: boolean
   details?: unknown
+  /** Low-level reason, logged server-side only (never serialised to clients). */
+  cause?: unknown
 }
 
 export class AppError extends Error {
@@ -46,7 +48,7 @@ export class AppError extends Error {
     message: string,
     options: AppErrorOptions = {},
   ) {
-    super(message)
+    super(message, options.cause === undefined ? undefined : { cause: options.cause })
     this.name = 'AppError'
     this.statusCode = STATUS_BY_CODE[code]
     this.retryable = options.retryable ?? RETRYABLE_BY_CODE.has(code)

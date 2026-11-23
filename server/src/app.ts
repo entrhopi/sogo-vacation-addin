@@ -14,6 +14,15 @@ import { registerVacationRoutes, type VacationRouteDeps } from './routes/vacatio
 const ALLOWED_METHODS = ['GET', 'PUT', 'POST', 'OPTIONS']
 const ALLOWED_HEADERS = ['content-type', 'authorization', 'x-request-id']
 
+/** Only what is useful for diagnosis; the stack never reaches a log line. */
+function describeCause(cause: unknown): string | undefined {
+  if (!(cause instanceof Error)) {
+    return undefined
+  }
+  const code = (cause as NodeJS.ErrnoException).code
+  return code ? `${code}: ${cause.message}` : cause.message
+}
+
 export interface AppDependencies {
   vacation: VacationRouteDeps
 }
@@ -54,7 +63,11 @@ export async function buildApp(
   app.setErrorHandler((error: FastifyError, request, reply) => {
     if (error instanceof AppError) {
       request.log.warn(
-        { code: error.code, statusCode: error.statusCode },
+        {
+          code: error.code,
+          statusCode: error.statusCode,
+          cause: describeCause(error.cause),
+        },
         'request rejected',
       )
       reply.code(error.statusCode).send(toErrorBody(error, request.id))

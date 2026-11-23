@@ -33,6 +33,20 @@ const ConfigSchema = z.object({
   IMAP_PORT: z.coerce.number().int().min(1).max(65_535).default(993),
   IMAP_SECURITY: z.enum(['tls', 'starttls', 'none']).default('tls'),
   IMAP_TIMEOUT_MS: z.coerce.number().int().min(100).max(60_000).default(5_000),
+
+  /**
+   * Inside Mailcow the connection goes to the `dovecot` network alias, but
+   * Dovecot serves the certificate of the public mail hostname. Verifying
+   * against that hostname keeps chain validation intact, unlike disabling it.
+   */
+  IMAP_TLS_SERVERNAME: z.preprocess(
+    (value) => (value === '' ? undefined : value),
+    z.string().min(1).optional(),
+  ),
+  IMAP_TLS_REJECT_UNAUTHORIZED: z
+    .enum(['true', 'false'])
+    .default('true')
+    .transform((value) => value === 'true'),
 }).superRefine((config, ctx) => {
   if (config.NODE_ENV === 'production' && config.IMAP_SECURITY === 'none') {
     ctx.addIssue({

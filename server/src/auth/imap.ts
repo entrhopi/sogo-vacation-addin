@@ -4,11 +4,25 @@ import { AppError } from '../lib/errors.js'
 
 export type ImapSecurity = 'tls' | 'starttls' | 'none'
 
+export interface ImapTlsOptions {
+  /**
+   * SNI plus the name the certificate is checked against. Defaults to `host`.
+   * Inside Mailcow the connection goes to the `dovecot` alias while the
+   * certificate belongs to the public mail hostname, so this must be set.
+   */
+  servername?: string
+  /** Chain validation. Defaults to true; never disable outside a trusted network. */
+  rejectUnauthorized?: boolean
+  /** Extra CA bundle, for internal CAs and tests. */
+  ca?: string | string[]
+}
+
 export interface ImapEndpoint {
   host: string
   port: number
   security: ImapSecurity
   timeoutMs: number
+  tls?: ImapTlsOptions
 }
 
 export interface MailboxCredentials {
@@ -108,20 +122,28 @@ async function readTagged(reader: LineReader, tag: string): Promise<string> {
   }
 }
 
+function tlsOptions(endpoint: ImapEndpoint): ImapTlsOptions {
+  return {
+    servername: endpoint.tls?.servername ?? endpoint.host,
+    rejectUnauthorized: endpoint.tls?.rejectUnauthorized ?? true,
+    ...(endpoint.tls?.ca ? { ca: endpoint.tls.ca } : {}),
+  }
+}
+
 function open(endpoint: ImapEndpoint): Promise<ImapStream> {
   return new Promise((resolve, reject) => {
-    const fail = (): void => {
-      reject(new AppError('IMAP_UNAVAILABLE', UNREACHABLE_MESSAGE))
+    const fail = (error: Error): void => {
+      reject(new AppError('IMAP_UNAVAILABLE', UNREACHABLE_MESSAGE, { cause: error }))
     }
 
     const socket: ImapStream =
       endpoint.security === 'tls'
-        ? connectTls({ host: endpoint.host, port: endpoint.port, servername: endpoint.host })
+        ? connectTls({ host: endpoint.host, port: endpoint.port, ...tlsOptions(endpoint) })
         : connectTcp({ host: endpoint.host, port: endpoint.port })
 
     const timer = setTimeout(() => {
       socket.destroy()
-      fail()
+      fail(new Error('TCP connect timed out'))
     }, endpoint.timeoutMs)
     timer.unref()
 
@@ -142,10 +164,14 @@ function open(endpoint: ImapEndpoint): Promise<ImapStream> {
 
 function upgradeToTls(socket: ImapStream, endpoint: ImapEndpoint): Promise<ImapStream> {
   return new Promise((resolve, reject) => {
-    const secure = connectTls({ socket, servername: endpoint.host })
+    const secure = connectTls({ socket, ...tlsOptions(endpoint) })
     secure.once('secureConnect', () => resolve(secure))
-    secure.once('error', () => {
-      reject(new AppError('IMAP_UNAVAILABLE', 'TLS negotiation with the mail server failed'))
+    secure.once('error', (error: Error) => {
+      reject(
+        new AppError('IMAP_UNAVAILABLE', 'TLS negotiation with the mail server failed', {
+          cause: error,
+        }),
+      )
     })
   })
 }

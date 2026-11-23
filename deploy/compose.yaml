@@ -15,6 +15,11 @@ services:
       IMAP_HOST: dovecot
       IMAP_PORT: '993'
       IMAP_SECURITY: tls
+      # Dovecot serves the certificate of the public mail hostname, not the
+      # internal "dovecot" alias. Set this in deploy/.env to that hostname so
+      # chain verification stays enabled.
+      IMAP_TLS_SERVERNAME: ${IMAP_TLS_SERVERNAME:-}
+      IMAP_TLS_REJECT_UNAUTHORIZED: ${IMAP_TLS_REJECT_UNAUTHORIZED:-true}
     networks:
       - mailcow
     # No published ports on purpose: Mailcow's nginx proxies /ooo to this
