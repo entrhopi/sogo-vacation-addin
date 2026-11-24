@@ -2,8 +2,9 @@
   "name": "sogo-ooo-server",
   "version": "0.1.0",
   "private": true,
+  "license": "GPL-3.0-only",
   "type": "module",
-  "description": "Out-of-office middleware for SOGo/Outlook add-in",
+  "description": "Out-of-office middleware for SOGo/Mailcow",
   "engines": {
     "node": ">=22"
   },

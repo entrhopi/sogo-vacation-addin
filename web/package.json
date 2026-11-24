@@ -2,6 +2,7 @@
   "name": "sogo-ooo-web",
   "version": "0.1.0",
   "private": true,
+  "license": "GPL-3.0-only",
   "type": "module",
   "description": "Installable web app for SOGo/Mailcow out-of-office settings",
   "scripts": {
