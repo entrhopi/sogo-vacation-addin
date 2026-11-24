@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Development manifest. URLs point at the Vite dev server on localhost, which is
+  fine for sideloading inside Outlook on the same machine. The production
+  manifest (hosted under https://<mailcow-host>/ooo/) is generated in the
+  hosting step, because the URLs depend on your domain.
+-->
+<OfficeApp
+  xmlns="http://schemas.microsoft.com/office/appforoffice/1.1"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns:bt="http://schemas.microsoft.com/office/officeappbasictypes/1.0"
+  xmlns:ov="http://schemas.microsoft.com/office/taskpaneappversionoverrides"
+  xsi:type="MailApp">
+
+  <Id>882954e9-df54-485e-a670-135253455cd9</Id>
+  <Version>1.0.0.0</Version>
+  <ProviderName>entrhopi</ProviderName>
+  <DefaultLocale>en-US</DefaultLocale>
+
+  <DisplayName DefaultValue="Out of office" />
+  <Description DefaultValue="Configure SOGo out-of-office replies without leaving Outlook." />
+  <IconUrl DefaultValue="https://localhost:5173/icon-32.png" />
+  <HighResolutionIconUrl DefaultValue="https://localhost:5173/icon-80.png" />
+  <SupportUrl DefaultValue="https://github.com/entrhopi/sogo-vacation-addin" />
+
+  <AppDomains>
+    <AppDomain>https://localhost:5173</AppDomain>
+  </AppDomains>
+
+  <Hosts>
+    <Host Name="Mailbox" />
+  </Hosts>
+
+  <Requirements>
+    <Sets>
+      <Set Name="Mailbox" MinVersion="1.5" />
+    </Sets>
+  </Requirements>
+
+  <!-- Fallback for clients without add-in command support. -->
+  <FormSettings>
+    <Form xsi:type="ItemRead">
+      <DesktopSettings>
+        <SourceLocation DefaultValue="https://localhost:5173/taskpane.html" />
+        <RequestedHeight>450</RequestedHeight>
+      </DesktopSettings>
+    </Form>
+  </FormSettings>
+
+  <Permissions>ReadItem</Permissions>
+
+  <Rule xsi:type="RuleCollection" Mode="Or">
+    <Rule xsi:type="ItemIs" ItemType="Message" FormType="Read" />
+  </Rule>
+
+  <VersionOverrides
+    xmlns="http://schemas.microsoft.com/office/mailappversionoverrides"
+    xsi:type="VersionOverridesV1_1">
+    <Requirements>
+      <bt:Sets DefaultMinVersion="1.5">
+        <bt:Set Name="Mailbox" />
+      </bt:Sets>
+    </Requirements>
+
+    <Hosts>
+      <Host xsi:type="MailHost">
+        <DesktopFormFactor>
+          <!--
+            Read surface only: the button is never shown while composing.
+            SupportsPinning keeps the pane open like a settings window.
+          -->
+          <ExtensionPoint xsi:type="MessageReadCommandSurface">
+            <OfficeTab id="TabDefault">
+              <Group id="oooGroup">
+                <Label resid="groupLabel" />
+                <Control xsi:type="Button" id="oooButton">
+                  <Label resid="buttonLabel" />
+                  <Supertip>
+                    <Title resid="buttonLabel" />
+                    <Description resid="buttonTooltip" />
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="icon16" />
+                    <bt:Image size="32" resid="icon32" />
+                    <bt:Image size="80" resid="icon80" />
+                  </Icon>
+                  <Action xsi:type="ShowTaskpane">
+                    <TaskpaneId>oooTaskpane</TaskpaneId>
+                    <SourceLocation resid="taskpaneUrl" />
+                    <SupportsPinning>true</SupportsPinning>
+                  </Action>
+                </Control>
+              </Group>
+            </OfficeTab>
+          </ExtensionPoint>
+        </DesktopFormFactor>
+      </Host>
+    </Hosts>
+
+    <Resources>
+      <bt:Images>
+        <bt:Image id="icon16" DefaultValue="https://localhost:5173/icon-16.png" />
+        <bt:Image id="icon32" DefaultValue="https://localhost:5173/icon-32.png" />
+        <bt:Image id="icon80" DefaultValue="https://localhost:5173/icon-80.png" />
+      </bt:Images>
+      <bt:Urls>
+        <bt:Url id="taskpaneUrl" DefaultValue="https://localhost:5173/taskpane.html" />
+      </bt:Urls>
+      <bt:ShortStrings>
+        <bt:String id="groupLabel" DefaultValue="Out of office" />
+        <bt:String id="buttonLabel" DefaultValue="Out of office" />
+      </bt:ShortStrings>
+      <bt:LongStrings>
+        <bt:String id="buttonTooltip" DefaultValue="Read or change the SOGo out-of-office reply for this mailbox." />
+      </bt:LongStrings>
+    </Resources>
+  </VersionOverrides>
+</OfficeApp>
