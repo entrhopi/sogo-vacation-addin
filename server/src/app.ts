@@ -137,7 +137,14 @@ export async function buildApp(
   if (existsSync(staticDir)) {
     await app.register(fastifyStatic, {
       root: staticDir,
-      index: ['taskpane.html'],
+      index: ['index.html'],
+      setHeaders(response, path) {
+        // Some hosts and browsers refuse an installable manifest served as
+        // application/octet-stream.
+        if (path.endsWith('.webmanifest')) {
+          response.header('content-type', 'application/manifest+json; charset=utf-8')
+        }
+      },
     })
   }
 

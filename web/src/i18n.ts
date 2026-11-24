@@ -2,7 +2,7 @@ export type Language = 'en' | 'de'
 
 const en = {
   title: 'Out of office',
-  subtitle: 'Replies are sent by SOGo, not by Exchange.',
+  subtitle: 'The reply is delivered by your own mail server.',
   mailbox: 'Mailbox',
   password: 'Password',
   load: 'Load current settings',
@@ -25,8 +25,6 @@ const en = {
   errorNetwork: 'The out-of-office service cannot be reached.',
   errorGeneric: 'The request failed.',
   retryHint: 'You can retry this request.',
-  hintBrowser: 'Not running inside Outlook — enter the mailbox address manually.',
-  hintOutlook: 'Mailbox taken from Outlook. Change it only to manage another account.',
   noteCredentials: 'The password is used for this request only and is not stored yet.',
   noteReadOnly: 'Read-only for now. Editing follows in the next step.',
   noSubject: 'No custom subject',
@@ -36,7 +34,7 @@ export type MessageKey = keyof typeof en
 
 const de: Record<MessageKey, string> = {
   title: 'Abwesenheit',
-  subtitle: 'Die Antworten versendet SOGo, nicht Exchange.',
+  subtitle: 'Die Antwort wird von deinem eigenen Mailserver versendet.',
   mailbox: 'Postfach',
   password: 'Passwort',
   load: 'Aktuelle Einstellungen laden',
@@ -59,8 +57,6 @@ const de: Record<MessageKey, string> = {
   errorNetwork: 'Der Abwesenheitsdienst ist nicht erreichbar.',
   errorGeneric: 'Die Anfrage ist fehlgeschlagen.',
   retryHint: 'Die Anfrage kann wiederholt werden.',
-  hintBrowser: 'Läuft nicht in Outlook — bitte die Postfachadresse manuell eingeben.',
-  hintOutlook: 'Postfach aus Outlook übernommen. Nur ändern, um ein anderes Konto zu verwalten.',
   noteCredentials: 'Das Passwort wird nur für diese Anfrage verwendet und noch nicht gespeichert.',
   noteReadOnly: 'Vorerst nur lesend. Bearbeiten folgt im nächsten Schritt.',
   noSubject: 'Kein eigener Betreff',

@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState, type FormEvent } from 'react'
+import { useMemo, useState, type FormEvent } from 'react'
 import { ApiError, getVacation, type VacationResponse, type VacationView } from './api'
 import { createTranslator, resolveLanguage, type Language, type MessageKey } from './i18n'
-import { readOfficeInfo, type OfficeInfo } from './office'
 
 type Status = 'idle' | 'loading' | 'ready' | 'error'
+
+const LAST_MAILBOX_KEY = 'sogo-ooo.last-mailbox'
 
 const ERROR_KEYS: Record<string, MessageKey> = {
   BAD_CREDENTIALS: 'errorBadCredentials',
@@ -12,6 +13,22 @@ const ERROR_KEYS: Record<string, MessageKey> = {
   IMAP_UNAVAILABLE: 'errorImapUnavailable',
   SOGO_UNAVAILABLE: 'errorSogoUnavailable',
   NETWORK: 'errorNetwork',
+}
+
+function rememberedMailbox(): string {
+  try {
+    return localStorage.getItem(LAST_MAILBOX_KEY) ?? ''
+  } catch {
+    return ''
+  }
+}
+
+function rememberMailbox(mailbox: string): void {
+  try {
+    localStorage.setItem(LAST_MAILBOX_KEY, mailbox)
+  } catch {
+    // Private mode or storage disabled: not remembering is acceptable.
+  }
 }
 
 function formatDate(epochSeconds: number, language: Language): string {
@@ -30,32 +47,14 @@ function period(vacation: VacationView, language: Language, t: ReturnType<typeof
 }
 
 export function App() {
-  const [office, setOffice] = useState<OfficeInfo | null>(null)
-  const [mailbox, setMailbox] = useState('')
+  const [mailbox, setMailbox] = useState(rememberedMailbox)
   const [password, setPassword] = useState('')
   const [status, setStatus] = useState<Status>('idle')
   const [data, setData] = useState<VacationResponse | null>(null)
   const [error, setError] = useState<ApiError | null>(null)
-  const [language, setLanguage] = useState<Language>(resolveLanguage(navigator.language))
+  const [language] = useState<Language>(() => resolveLanguage(navigator.language))
 
   const t = useMemo(() => createTranslator(language), [language])
-
-  useEffect(() => {
-    let cancelled = false
-    void readOfficeInfo().then((info) => {
-      if (cancelled) {
-        return
-      }
-      setOffice(info)
-      setLanguage(resolveLanguage(info.language))
-      if (info.email) {
-        setMailbox(info.email)
-      }
-    })
-    return () => {
-      cancelled = true
-    }
-  }, [])
 
   async function load(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault()
@@ -65,6 +64,7 @@ export function App() {
       const response = await getVacation(mailbox.trim(), password)
       setData(response)
       setStatus('ready')
+      rememberMailbox(mailbox.trim())
     } catch (caught) {
       setData(null)
       setError(
@@ -89,10 +89,6 @@ export function App() {
           </span>
         )}
       </header>
-
-      {office && (
-        <p className="hint">{office.inOutlook ? t('hintOutlook') : t('hintBrowser')}</p>
-      )}
 
       <form className="form" onSubmit={load}>
         <label className="field">

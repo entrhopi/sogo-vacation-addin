@@ -1,12 +1,12 @@
 # syntax=docker/dockerfile:1
 
-# The add-in is built here so the image can serve it from the same origin as
-# the API: https://<host>/ooo/ -> container :8080.
-FROM --platform=$BUILDPLATFORM node:26-alpine AS addin-build
-WORKDIR /addin
-COPY addin/package.json addin/package-lock.json ./
+# The web app is built here so the container can serve it from the same origin
+# as the API: https://<host>/ooo/ -> container :8080.
+FROM --platform=$BUILDPLATFORM node:26-alpine AS web-build
+WORKDIR /web
+COPY web/package.json web/package-lock.json ./
 RUN npm ci
-COPY addin/ ./
+COPY web/ ./
 RUN npm run build
 
 FROM --platform=$BUILDPLATFORM node:26-alpine AS server-build
@@ -26,9 +26,10 @@ RUN addgroup -S app && adduser -S app -G app
 COPY --from=server-build --chown=app:app /app/package.json ./package.json
 COPY --from=server-build --chown=app:app /app/node_modules ./node_modules
 COPY --from=server-build --chown=app:app /app/dist ./dist
-COPY --from=addin-build --chown=app:app /addin/dist ./public
-# Served through the manifest route, which rewrites the development URLs.
-COPY --from=addin-build --chown=app:app /addin/manifest.xml ./manifest-template.xml
+COPY --from=web-build --chown=app:app /web/dist ./public
+# Optional Office add-in wrapper. Served through the manifest route, which
+# rewrites the development URLs to PUBLIC_BASE_URL.
+COPY --chown=app:app office/manifest.xml ./manifest-template.xml
 
 USER app
 EXPOSE 8080

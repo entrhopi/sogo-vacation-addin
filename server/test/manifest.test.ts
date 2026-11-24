@@ -56,13 +56,13 @@ describe('GET /manifest.xml', () => {
 })
 
 describe('static add-in files', () => {
-  it('serves the taskpane and uses it as the index', async () => {
+  it('serves the app shell and uses it as the index', async () => {
     const directory = await mkdtemp(join(tmpdir(), 'ooo-static-'))
-    await writeFile(join(directory, 'taskpane.html'), '<html><body>pane</body></html>')
+    await writeFile(join(directory, 'index.html'), '<html><body>pane</body></html>')
 
     const { app } = await makeApp({ STATIC_DIR: directory })
 
-    const file = await app.inject({ method: 'GET', url: '/taskpane.html' })
+    const file = await app.inject({ method: 'GET', url: '/index.html' })
     expect(file.statusCode).toBe(200)
     expect(file.body).toContain('pane')
 
@@ -76,11 +76,11 @@ describe('static add-in files', () => {
     // Regression: @fastify/static rejects a relative root, so the directory is
     // resolved before registration. The container sets STATIC_DIR=public.
     const directory = await mkdtemp(join(tmpdir(), 'ooo-static-relative-'))
-    await writeFile(join(directory, 'taskpane.html'), '<html><body>relative</body></html>')
+    await writeFile(join(directory, 'index.html'), '<html><body>relative</body></html>')
 
     const { app } = await makeApp({ STATIC_DIR: relative(process.cwd(), directory) })
 
-    const response = await app.inject({ method: 'GET', url: '/taskpane.html' })
+    const response = await app.inject({ method: 'GET', url: '/index.html' })
     expect(response.statusCode).toBe(200)
     expect(response.body).toContain('relative')
 

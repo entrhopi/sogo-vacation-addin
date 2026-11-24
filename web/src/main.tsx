@@ -13,3 +13,11 @@ createRoot(container).render(
     <App />
   </StrictMode>,
 )
+
+// Installability plus an offline shell. Skipped in dev, where the service worker
+// would only get in the way of hot reloads.
+if (import.meta.env.PROD && 'serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    void navigator.serviceWorker.register('./sw.js')
+  })
+}

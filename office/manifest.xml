@@ -40,7 +40,7 @@
   <FormSettings>
     <Form xsi:type="ItemRead">
       <DesktopSettings>
-        <SourceLocation DefaultValue="https://localhost:5173/taskpane.html" />
+        <SourceLocation DefaultValue="https://localhost:5173/" />
         <RequestedHeight>450</RequestedHeight>
       </DesktopSettings>
     </Form>
@@ -103,7 +103,7 @@
         <bt:Image id="icon80" DefaultValue="https://localhost:5173/icon-80.png" />
       </bt:Images>
       <bt:Urls>
-        <bt:Url id="taskpaneUrl" DefaultValue="https://localhost:5173/taskpane.html" />
+        <bt:Url id="taskpaneUrl" DefaultValue="https://localhost:5173/" />
       </bt:Urls>
       <bt:ShortStrings>
         <bt:String id="groupLabel" DefaultValue="Out of office" />

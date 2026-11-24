@@ -1,9 +1,9 @@
 {
-  "name": "sogo-ooo-addin",
+  "name": "sogo-ooo-web",
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Outlook taskpane for SOGo/Mailcow out-of-office settings",
+  "description": "Installable web app for SOGo/Mailcow out-of-office settings",
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
@@ -16,7 +16,6 @@
   },
   "devDependencies": {
     "@types/node": "^26.6.6",
-    "@types/office-js": "^1.0.618",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.3.0",
