@@ -35,8 +35,26 @@ jobs:
       - run: npm test
       - run: npm run build
 
+  verify-addin:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: addin
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '26'
+          cache: npm
+          cache-dependency-path: addin/package-lock.json
+
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run build
+
   image:
-    needs: verify
+    needs: [verify, verify-addin]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -66,7 +84,7 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
-          context: server
+          context: .
           platforms: linux/amd64,linux/arm64
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}

@@ -20,6 +20,10 @@ services:
       # chain verification stays enabled.
       IMAP_TLS_SERVERNAME: ${IMAP_TLS_SERVERNAME:-}
       IMAP_TLS_REJECT_UNAUTHORIZED: ${IMAP_TLS_REJECT_UNAUTHORIZED:-true}
+      # Public URL of the add-in (nginx location). Without it /manifest.xml 404s.
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-}
+      # Behind Mailcow's nginx; it overwrites X-Forwarded-For with the real client.
+      TRUST_PROXY: 'true'
     networks:
       - mailcow
     # No published ports on purpose: Mailcow's nginx proxies /ooo to this

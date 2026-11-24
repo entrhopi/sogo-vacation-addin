@@ -1,5 +1,8 @@
 import { randomUUID } from 'node:crypto'
+import { existsSync } from 'node:fs'
+import { readFile } from 'node:fs/promises'
 import cors from '@fastify/cors'
+import fastifyStatic from '@fastify/static'
 import Fastify, {
   type FastifyError,
   type FastifyInstance,
@@ -9,6 +12,7 @@ import { createVacationDeps } from './deps.js'
 import { AppError, toErrorBody } from './lib/errors.js'
 import { buildLoggerOptions } from './lib/logger.js'
 import { registerHealthRoutes } from './routes/health.js'
+import { registerManifestRoute, type ManifestOptions } from './routes/manifest.js'
 import { registerVacationRoutes, type VacationRouteDeps } from './routes/vacation.js'
 
 const ALLOWED_METHODS = ['GET', 'PUT', 'POST', 'OPTIONS']
@@ -25,6 +29,7 @@ function describeCause(cause: unknown): string | undefined {
 
 export interface AppDependencies {
   vacation: VacationRouteDeps
+  manifest: ManifestOptions
 }
 
 export async function buildApp(
@@ -35,6 +40,7 @@ export async function buildApp(
     logger:
       config.LOG_LEVEL === 'silent' ? false : buildLoggerOptions(config.LOG_LEVEL),
     genReqId: () => randomUUID(),
+    trustProxy: config.TRUST_PROXY,
   })
 
   await app.register(cors, {
@@ -116,6 +122,20 @@ export async function buildApp(
 
   await registerHealthRoutes(app)
   await registerVacationRoutes(app, dependencies.vacation ?? createVacationDeps(config))
+
+  if (dependencies.manifest) {
+    registerManifestRoute(app, dependencies.manifest)
+  } else if (config.PUBLIC_BASE_URL) {
+    const template = await readFile(config.MANIFEST_TEMPLATE_PATH, 'utf8')
+    registerManifestRoute(app, { template, baseUrl: config.PUBLIC_BASE_URL })
+  }
+
+  if (existsSync(config.STATIC_DIR)) {
+    await app.register(fastifyStatic, {
+      root: config.STATIC_DIR,
+      index: ['taskpane.html'],
+    })
+  }
 
   return app
 }

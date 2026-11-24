@@ -47,6 +47,27 @@ const ConfigSchema = z.object({
     .enum(['true', 'false'])
     .default('true')
     .transform((value) => value === 'true'),
+
+  /** Behind Mailcow's nginx, so the client address comes from X-Forwarded-For. */
+  TRUST_PROXY: z
+    .enum(['true', 'false'])
+    .default('false')
+    .transform((value) => value === 'true'),
+
+  /** Where the built add-in lives inside the image. */
+  STATIC_DIR: z.string().min(1).default('public'),
+
+  /**
+   * Public base the add-in is served from, e.g. https://mail.example.org/ooo.
+   * The manifest's URLs are rewritten from the localhost development values at
+   * request time, so one image works for any domain and the hostname never
+   * needs to live in the repository.
+   */
+  PUBLIC_BASE_URL: z.preprocess(
+    (value) => (value === '' ? undefined : value),
+    z.url().optional(),
+  ),
+  MANIFEST_TEMPLATE_PATH: z.string().min(1).default('manifest-template.xml'),
 }).superRefine((config, ctx) => {
   if (config.NODE_ENV === 'production' && config.IMAP_SECURITY === 'none') {
     ctx.addIssue({
