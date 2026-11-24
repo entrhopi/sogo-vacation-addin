@@ -51,6 +51,7 @@ export function App() {
   const [canStore, setCanStore] = useState(false)
   const [remember, setRemember] = useState(true)
   const [accounts, setAccounts] = useState<StoredAccount[]>([])
+  const [showForm, setShowForm] = useState(true)
   const autoUnlocked = useRef(false)
 
   const t = useMemo(() => createTranslator(language), [language])
@@ -59,9 +60,11 @@ export function App() {
     (account) => account.mailbox.toLowerCase() === mailbox.trim().toLowerCase(),
   )
 
-  async function persist(mailboxValue: string, passwordValue: string): Promise<void> {
+  const formVisible = accounts.length === 0 || showForm
+
+  async function persist(mailboxValue: string, passwordValue: string): Promise<boolean> {
     if (!canStore) {
-      return
+      return false
     }
     try {
       if (remember) {
@@ -69,9 +72,12 @@ export function App() {
       } else {
         await forgetPassword(mailboxValue)
       }
-      setAccounts(await listAccounts())
+      const next = await listAccounts()
+      setAccounts(next)
+      return remember && next.some((account) => account.mailbox === mailboxValue)
     } catch {
       // Storage failures must never break the request the user asked for.
+      return false
     }
   }
 
@@ -83,7 +89,11 @@ export function App() {
       setData(response)
       setStatus('ready')
       rememberMailbox(mailboxValue)
-      await persist(mailboxValue, passwordValue)
+      const stored = await persist(mailboxValue, passwordValue)
+      if (stored) {
+        // Normal operation: the mailbox is saved, so the entry form goes away.
+        setShowForm(false)
+      }
     } catch (caught) {
       setData(null)
       setError(
@@ -106,6 +116,9 @@ export function App() {
           return
         }
         setAccounts(stored)
+        if (stored.length > 0) {
+          setShowForm(false)
+        }
 
         const remembered = rememberedMailbox()
         const hasStoredPassword = stored.some((account) => account.mailbox === remembered)
@@ -116,6 +129,9 @@ export function App() {
             setMailbox(remembered)
             setPassword(secret)
             await loadFor(remembered, secret)
+          } else if (!cancelled) {
+            // Stored record exists but cannot be opened: ask for the password.
+            setShowForm(true)
           }
         }
       } catch {
@@ -152,7 +168,11 @@ export function App() {
     const target = mailbox.trim()
     try {
       await forgetPassword(target)
-      setAccounts(await listAccounts())
+      const next = await listAccounts()
+      setAccounts(next)
+      if (next.length === 0) {
+        setShowForm(true)
+      }
     } catch {
       // Nothing to show the user: the record is best-effort.
     }
@@ -175,12 +195,12 @@ export function App() {
         )}
       </header>
 
-      <form className="form" onSubmit={submit}>
-        {accounts.length > 0 && (
+      {accounts.length > 0 && (
+        <div className="accounts">
           <label className="field">
             <span>{t('savedAccounts')}</span>
             <select
-              value=""
+              value={storedForCurrent ? mailbox.trim() : ''}
               onChange={(event) => void chooseAccount(event.target.value)}
             >
               <option value="">{t('chooseAccount')}</option>
@@ -191,55 +211,66 @@ export function App() {
               ))}
             </select>
           </label>
-        )}
+          <button
+            type="button"
+            className="link"
+            onClick={() => setShowForm((visible) => !visible)}
+          >
+            {showForm ? t('hideForm') : t('addMailbox')}
+          </button>
+        </div>
+      )}
 
-        <label className="field">
-          <span>{t('mailbox')}</span>
-          <input
-            type="email"
-            value={mailbox}
-            onChange={(event) => setMailbox(event.target.value)}
-            autoComplete="username"
-            required
-            spellCheck={false}
-          />
-        </label>
+      {formVisible && (
+        <form className="form" onSubmit={submit}>
+          <label className="field">
+            <span>{t('mailbox')}</span>
+            <input
+              type="email"
+              value={mailbox}
+              onChange={(event) => setMailbox(event.target.value)}
+              autoComplete="username"
+              required
+              spellCheck={false}
+            />
+          </label>
 
-        <label className="field">
-          <span>{t('password')}</span>
-          <input
-            type="password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            autoComplete="current-password"
-            required
-          />
-        </label>
+          <label className="field">
+            <span>{t('password')}</span>
+            <input
+              type="password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              autoComplete="current-password"
+              required
+            />
+          </label>
 
-        {canStore && (
-          <div className="row__check row__check--wide">
-            <label className="row__check">
-              <input
-                type="checkbox"
-                checked={remember}
-                onChange={(event) => setRemember(event.target.checked)}
-              />
-              <span>{t('rememberLabel')}</span>
-            </label>
-            {storedForCurrent && (
-              <button type="button" className="link" onClick={() => void forget()}>
-                {t('forgetPassword')}
-              </button>
-            )}
-          </div>
-        )}
+          {canStore && (
+            <div className="row__check row__check--wide">
+              <label className="row__check">
+                <input
+                  type="checkbox"
+                  checked={remember}
+                  onChange={(event) => setRemember(event.target.checked)}
+                />
+                <span>{t('rememberLabel')}</span>
+              </label>
+              {storedForCurrent && (
+                <button type="button" className="link" onClick={() => void forget()}>
+                  {t('forgetPassword')}
+                </button>
+              )}
+            </div>
+          )}
 
-        <button type="submit" disabled={status === 'loading' || !mailbox || !password}>
-          {status === 'loading' ? t('loading') : t('load')}
-        </button>
-      </form>
+          <button type="submit" disabled={status === 'loading' || !mailbox || !password}>
+            {status === 'loading' ? t('loading') : t('load')}
+          </button>
+        </form>
+      )}
 
-      <p className="note">{t('noteCredentials')}</p>
+      {formVisible && <p className="note">{t('noteCredentials')}</p>}
 
       {status === 'error' && error && (
         <section className="error" role="alert">

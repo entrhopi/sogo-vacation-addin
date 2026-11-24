@@ -27,6 +27,8 @@ const en = {
   chooseAccount: 'Choose a mailbox…',
   rememberLabel: 'Remember the password on this device',
   forgetPassword: 'Forget saved password',
+  addMailbox: 'Add another mailbox',
+  hideForm: 'Hide',
 
   validationMessage: 'Add a message before enabling the reply.',
   validationDate: 'Pick a valid date.',
@@ -75,6 +77,8 @@ const de: Record<MessageKey, string> = {
   chooseAccount: 'Postfach wählen…',
   rememberLabel: 'Passwort auf diesem Gerät speichern',
   forgetPassword: 'Gespeichertes Passwort löschen',
+  addMailbox: 'Weiteres Postfach hinzufügen',
+  hideForm: 'Ausblenden',
 
   validationMessage: 'Bitte eine Nachricht eingeben, bevor die Antwort aktiviert wird.',
   validationDate: 'Bitte ein gültiges Datum wählen.',
