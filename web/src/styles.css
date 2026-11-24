@@ -273,3 +273,28 @@ button:disabled {
     grid-template-columns: auto minmax(0, 1fr);
   }
 }
+
+select {
+  font: inherit;
+  color: var(--fg);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 7px 9px;
+}
+
+.row__check--wide {
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+button.link {
+  background: none;
+  color: var(--accent);
+  font-weight: 400;
+  font-size: 12px;
+  padding: 0;
+  text-decoration: underline;
+}
+

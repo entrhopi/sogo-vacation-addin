@@ -67,17 +67,28 @@ bar. It runs in its own window from then on.
 
 Working today: read **and edit** the state from the app — on/off, date and
 optional time window, custom subject, message, and the mailing-list option —
-with English and German UI.
+with English and German UI. Optionally remember the password on the device.
 
 Planned, roughly in order:
 
-1. Remember the password on the device (encrypted, never sent to a server for
-   storage) so the app opens straight into the state.
-2. A Thunderbird add-on using the same API, for people who never open a browser
+1. A Thunderbird add-on using the same API, for people who never open a browser
    tab for mail.
-3. Out-of-office driven by calendar entries. This is the one feature that cannot
+2. Out-of-office driven by calendar entries. This is the one feature that cannot
    be stateless: it needs either an opt-in, encrypted server-side credential or a
    local agent, so it is deliberately last.
+
+## How credentials are handled
+
+- Every request is verified against Dovecot before SOGo is touched. SOGo itself
+  trusts a proxy header and checks no passwords, so this is the only
+  authentication in the system.
+- Nothing is stored on the server. The middleware is stateless.
+- "Remember on this device" keeps the password in IndexedDB, sealed with
+  AES-GCM under a **non-extractable** key generated in the browser. The key can
+  encrypt and decrypt but cannot be read out, and it never leaves the device.
+  "Forget saved password" deletes both the record and, with it, access.
+- Lose the browser profile, or open the app in another browser, and you simply
+  type the password again. There is no recovery path, by design.
 
 ## Documentation
 
