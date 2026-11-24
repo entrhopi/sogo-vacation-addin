@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import { existsSync } from 'node:fs'
 import { readFile } from 'node:fs/promises'
+import { resolve } from 'node:path'
 import cors from '@fastify/cors'
 import fastifyStatic from '@fastify/static'
 import Fastify, {
@@ -126,13 +127,16 @@ export async function buildApp(
   if (dependencies.manifest) {
     registerManifestRoute(app, dependencies.manifest)
   } else if (config.PUBLIC_BASE_URL) {
-    const template = await readFile(config.MANIFEST_TEMPLATE_PATH, 'utf8')
+    const template = await readFile(resolve(config.MANIFEST_TEMPLATE_PATH), 'utf8')
     registerManifestRoute(app, { template, baseUrl: config.PUBLIC_BASE_URL })
   }
 
-  if (existsSync(config.STATIC_DIR)) {
+  // @fastify/static refuses a relative root, so resolve it against the working
+  // directory (which is the image's /app in production).
+  const staticDir = resolve(config.STATIC_DIR)
+  if (existsSync(staticDir)) {
     await app.register(fastifyStatic, {
-      root: config.STATIC_DIR,
+      root: staticDir,
       index: ['taskpane.html'],
     })
   }

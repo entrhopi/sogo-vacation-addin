@@ -1,6 +1,6 @@
 import { mkdtemp, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { join, relative } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { renderManifest } from '../src/manifest.js'
 import { makeApp } from './helpers.js'
@@ -68,6 +68,21 @@ describe('static add-in files', () => {
 
     const index = await app.inject({ method: 'GET', url: '/' })
     expect(index.statusCode).toBe(200)
+
+    await app.close()
+  })
+
+  it('accepts a relative static directory, which is how the image configures it', async () => {
+    // Regression: @fastify/static rejects a relative root, so the directory is
+    // resolved before registration. The container sets STATIC_DIR=public.
+    const directory = await mkdtemp(join(tmpdir(), 'ooo-static-relative-'))
+    await writeFile(join(directory, 'taskpane.html'), '<html><body>relative</body></html>')
+
+    const { app } = await makeApp({ STATIC_DIR: relative(process.cwd(), directory) })
+
+    const response = await app.inject({ method: 'GET', url: '/taskpane.html' })
+    expect(response.statusCode).toBe(200)
+    expect(response.body).toContain('relative')
 
     await app.close()
   })
