@@ -20,12 +20,26 @@ services:
       # chain verification stays enabled.
       IMAP_TLS_SERVERNAME: ${IMAP_TLS_SERVERNAME:-}
       IMAP_TLS_REJECT_UNAUTHORIZED: ${IMAP_TLS_REJECT_UNAUTHORIZED:-true}
-      # Public URL of the add-in (nginx location). Without it /manifest.xml 404s.
+      # Public URL of the add-in (traefik router below). Without it /manifest.xml 404s.
       PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-}
-      # Behind Mailcow's nginx; it overwrites X-Forwarded-For with the real client.
-      TRUST_PROXY: 'true'
+      # Traefik appends its own hop to X-Forwarded-For; trusting exactly one hop
+      # makes the rate limiter use the real client and ignores spoofed values.
+      TRUST_PROXY: '1'
     networks:
       - mailcow
+      - traefik
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=${TRAEFIK_NETWORK:-proxy}
+      - traefik.http.routers.ooo.rule=Host(`${PUBLIC_HOST:-mail.example.org}`) && PathPrefix(`/ooo`)
+      - traefik.http.routers.ooo.entrypoints=${TRAEFIK_ENTRYPOINT:-websecure}
+      - traefik.http.routers.ooo.tls=true
+      - traefik.http.routers.ooo.tls.certresolver=${TRAEFIK_CERTRESOLVER:-letsencrypt}
+      # Must beat the catch-all router that sends the rest of the host to mailcow.
+      - traefik.http.routers.ooo.priority=1000
+      - traefik.http.routers.ooo.middlewares=ooo-strip
+      - traefik.http.middlewares.ooo-strip.stripprefix.prefixes=/ooo
+      - traefik.http.services.ooo.loadbalancer.server.port=8080
     # No published ports on purpose: Mailcow's nginx proxies /ooo to this
     # container over the shared network, so the API is never exposed directly.
     read_only: true
@@ -45,3 +59,6 @@ networks:
   mailcow:
     external: true
     name: ${MAILCOW_NETWORK:-mailcow_mailcow-network}
+  traefik:
+    external: true
+    name: ${TRAEFIK_NETWORK:-proxy}

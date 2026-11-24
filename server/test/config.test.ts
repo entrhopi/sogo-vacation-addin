@@ -43,6 +43,22 @@ describe('loadConfig', () => {
     )
   })
 
+  it('defaults to not trusting proxy headers', () => {
+    expect(loadConfig({}).TRUST_PROXY).toBe(false)
+  })
+
+  it('accepts a hop count so a spoofed X-Forwarded-For prefix is ignored', () => {
+    const trustOne = loadConfig({ TRUST_PROXY: '1' }).TRUST_PROXY
+    expect(typeof trustOne).toBe('function')
+    const trust = trustOne as (address: string, hop: number) => boolean
+    // hop 0 is the socket (Traefik); everything further left is untrusted.
+    expect(trust('172.22.1.200', 0)).toBe(true)
+    expect(trust('203.0.113.9', 1)).toBe(false)
+
+    expect(loadConfig({ TRUST_PROXY: 'true' }).TRUST_PROXY).toBe(true)
+    expect(() => loadConfig({ TRUST_PROXY: 'eleven' })).toThrowError(/TRUST_PROXY/)
+  })
+
   it('refuses plaintext IMAP in production', () => {
     expect(() =>
       loadConfig({ NODE_ENV: 'production', IMAP_SECURITY: 'none' }),

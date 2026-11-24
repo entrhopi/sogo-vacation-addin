@@ -1,7 +1,11 @@
 # Deploying sogo-ooo
 
-Three pieces: the container (API + static add-in), the Mailcow nginx route, and
-the Outlook add-in installation.
+Three pieces: the container (API + static add-in), a Traefik router, and the
+Outlook add-in installation.
+
+Traefik is assumed to be the 443 edge, as on this installation (Mailcow's nginx
+only listens on `127.0.0.1:28443` behind it). If nginx is the edge instead, see
+[Alternative: nginx](#alternative-nginx).
 
 ## 1. Container
 
@@ -19,77 +23,84 @@ cp deploy/.env.example .env    # first time only, then edit
 | `ADDIN_ORIGINS` | `https://<mail-host>` |
 | `IMAP_TLS_SERVERNAME` | the name on Dovecot's certificate (often the mail host) |
 | `PUBLIC_BASE_URL` | `https://<mail-host>/ooo` |
+| `PUBLIC_HOST` | `<mail-host>` |
+| `TRAEFIK_NETWORK` | network Traefik watches (often `proxy`) |
+| `TRAEFIK_ENTRYPOINT` | your HTTPS entrypoint (often `websecure`) |
+| `TRAEFIK_CERTRESOLVER` | your resolver name (e.g. `cloudflare`, `letsencrypt`) |
+
+Find the Traefik values with:
 
 ```bash
-docker compose pull && docker compose up -d
-docker inspect --format '{{.State.Health.Status}}' sogo-ooo   # healthy
+docker inspect traefik_app --format '{{range $k,$v := .NetworkSettings.Networks}}{{$k}}{{"\n"}}{{end}}'
+docker inspect traefik_app --format '{{json .Config.Cmd}}'
 ```
 
-## 2. Nginx route (Mailcow)
+## 2. Router
 
-The add-in must share the origin of the Mailcow vhost: `https://<host>/ooo/`.
+`deploy/compose.yaml` already carries the labels:
+
+- `Host(<PUBLIC_HOST>) && PathPrefix(/ooo)`, priority 1000 so it wins over the
+  catch-all mailcow router,
+- `stripprefix` on `/ooo`, so the container sees `/api/vacation` and
+  `/taskpane.html`,
+- `loadbalancer.server.port=8080`,
+- the container joined to both the mailcow and Traefik networks.
 
 ```bash
-cp deploy/nginx/ooo.conf.inc <mailcow>/data/conf/nginx/ooo.conf.inc
+docker compose up -d
+docker inspect --format '{{.State.Health.Status}}' sogo-ooo
 ```
 
-Then edit `<mailcow>/data/conf/nginx/templates/sites-default.conf.j2` and add,
-right after `client_max_body_size 64m;`:
-
-```nginx
-include /etc/nginx/conf.d/ooo.conf.inc;
-```
-
-Restart nginx so the template is re-rendered:
+Traefik picks up label changes without a restart. Verify:
 
 ```bash
-docker restart mailcow-nginx-mailcow-1
-docker exec mailcow-nginx-mailcow-1 grep -n 'ooo.conf.inc' /etc/nginx/includes/sites-default.conf
+docker logs --tail 20 traefik_app | grep -i ooo
+curl -sI https://<mail-host>/ooo/ | head -3
+curl -s  https://<mail-host>/ooo/manifest.xml | grep -E 'AppDomain|taskpane'
+curl -s  -o /dev/null -w '%{http_code}\n' https://<mail-host>/ooo/api/vacation
 ```
 
-If that `grep` prints nothing, the image did not re-render the template and the
-route will not exist — stop and check the nginx container's startup logs before
-continuing.
-
-Verify from outside:
-
-```bash
-curl -sI https://<host>/ooo/ | head -3            # 200, text/html
-curl -s  https://<host>/ooo/manifest.xml | head -5  # <OfficeApp ... your host ...>
-curl -s  -o /dev/null -w '%{http_code}\n' https://<host>/ooo/api/vacation  # 401
-```
-
-The 401 is correct: no credentials were sent.
+Expected: a router in the logs, `200 text/html`, manifest URLs on your host, and
+`401` for the API (no credentials sent).
 
 ## 3. Install the add-in
 
-The manifest is generated from the running container, so always install the
-*served* one, never the repository copy (that one points at localhost):
+Always install the manifest *served by the container*, never the repository copy
+(that one points at localhost):
 
 ```bash
-curl -s https://<host>/ooo/manifest.xml -o sogo-ooo-manifest.xml
+curl -s https://<mail-host>/ooo/manifest.xml -o sogo-ooo-manifest.xml
 ```
 
-In Outlook on the web: **Settings → Mail → Custom add-ins → Add a custom add-in
-→ Add from file**, then pick `sogo-ooo-manifest.xml`. Classic Outlook on Windows
-picks it up from the mailbox after OWA has accepted it.
+Outlook on the web → **Settings → Mail → Custom add-ins → Add a custom add-in →
+Add from file**. Classic Outlook on Windows picks it up from the mailbox after
+OWA accepted it.
 
-The button appears on the ribbon when a message is selected — never while
-composing, since no compose command surface is declared.
+The button appears when a message is selected, never while composing.
 
-## 4. Updating
+## Alternative: nginx
+
+If Mailcow's nginx owns 443, drop the `traefik` network and the labels from
+`compose.yaml`, then follow the comments at the top of
+`deploy/nginx/ooo.conf.inc`: copy it to `<mailcow>/data/conf/nginx/`, add one
+`include` line to `templates/sites-default.conf.j2`, restart the nginx container.
+The snippet also replaces Mailcow's `X-Frame-Options: SAMEORIGIN`, which would
+otherwise stop Outlook from framing the pane.
+
+## Updating
 
 ```bash
 docker compose pull && docker compose up -d
 ```
 
-No manifest change is needed when the host stays the same: the manifest is
-rendered per request from `PUBLIC_BASE_URL`. Office caches manifests, so after
-changing `PUBLIC_BASE_URL` remove and re-add the add-in.
+No manifest change is needed while the host stays the same: it is rendered per
+request from `PUBLIC_BASE_URL`. Office caches manifests, so removing and
+re-adding the add-in is needed after changing the host.
 
 ## Notes
 
-- Mailcow updates may overwrite `data/conf/nginx/templates/*`. Re-apply the
-  one-line `include` if `git` reports a conflict there.
-- `sogo-ooo` has no published port; it is reachable only through the shared
-  Docker network, which is also why the nginx location resolves it by name.
+- `sogo-ooo` publishes no ports; it is reachable only through the Docker networks.
+- `TRUST_PROXY=1` makes the rate limiter trust exactly one proxy hop, so a
+  client-supplied `X-Forwarded-For` prefix cannot be used to dodge it.
+- Mailcow updates may overwrite `data/conf/nginx/templates/*`; only relevant for
+  the nginx alternative.

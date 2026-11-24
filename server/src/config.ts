@@ -1,5 +1,8 @@
 import { z } from 'zod'
 
+/** Matches Fastify's own trust-proxy callback signature. */
+export type TrustProxy = boolean | ((address: string, hop: number) => boolean)
+
 /**
  * Configuration is read once at startup and fails fast. Keys are named after the
  * environment variables they come from so .env files and the schema stay in sync.
@@ -48,11 +51,32 @@ const ConfigSchema = z.object({
     .default('true')
     .transform((value) => value === 'true'),
 
-  /** Behind Mailcow's nginx, so the client address comes from X-Forwarded-For. */
+  /**
+   * Behind a reverse proxy, so the client address comes from X-Forwarded-For.
+   * Fastify does not accept a hop count, so a number becomes a trust function:
+   * trusting hop 0 (the socket) makes `request.ip` the rightmost forwarded
+   * address, i.e. the one Traefik appended. A client-supplied prefix is ignored.
+   */
   TRUST_PROXY: z
-    .enum(['true', 'false'])
+    .string()
     .default('false')
-    .transform((value) => value === 'true'),
+    .refine(
+      (value) =>
+        value === 'true' ||
+        value === 'false' ||
+        (/^\d+$/.test(value) && Number(value) <= 10),
+      { message: 'Expected "true", "false" or a hop count between 0 and 10' },
+    )
+    .transform((value): TrustProxy => {
+      if (value === 'false') {
+        return false
+      }
+      if (value === 'true') {
+        return true
+      }
+      const hops = Number(value)
+      return (_address: string, hop: number) => hop < hops
+    }),
 
   /** Where the built add-in lives inside the image. */
   STATIC_DIR: z.string().min(1).default('public'),
