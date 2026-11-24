@@ -211,13 +211,20 @@ export function App() {
               ))}
             </select>
           </label>
-          <button
-            type="button"
-            className="link"
-            onClick={() => setShowForm((visible) => !visible)}
-          >
-            {showForm ? t('hideForm') : t('addMailbox')}
-          </button>
+          <div className="accounts__actions">
+            <button
+              type="button"
+              className="link"
+              onClick={() => setShowForm((visible) => !visible)}
+            >
+              {showForm ? t('hideForm') : t('addMailbox')}
+            </button>
+            {storedForCurrent && (
+              <button type="button" className="link" onClick={() => void forget()}>
+                {t('forgetPassword')}
+              </button>
+            )}
+          </div>
         </div>
       )}
 
@@ -247,21 +254,14 @@ export function App() {
           </label>
 
           {canStore && (
-            <div className="row__check row__check--wide">
-              <label className="row__check">
-                <input
-                  type="checkbox"
-                  checked={remember}
-                  onChange={(event) => setRemember(event.target.checked)}
-                />
-                <span>{t('rememberLabel')}</span>
-              </label>
-              {storedForCurrent && (
-                <button type="button" className="link" onClick={() => void forget()}>
-                  {t('forgetPassword')}
-                </button>
-              )}
-            </div>
+            <label className="row__check">
+              <input
+                type="checkbox"
+                checked={remember}
+                onChange={(event) => setRemember(event.target.checked)}
+              />
+              <span>{t('rememberLabel')}</span>
+            </label>
           )}
 
           <button type="submit" disabled={status === 'loading' || !mailbox || !password}>

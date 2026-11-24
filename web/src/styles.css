@@ -308,3 +308,11 @@ button.link {
 .accounts .field {
   width: 100%;
 }
+
+.accounts__actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
