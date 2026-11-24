@@ -65,16 +65,17 @@ bar. It runs in its own window from then on.
 
 ## Status
 
-Working today: read the current state from the app, with English and German UI.
+Working today: read **and edit** the state from the app — on/off, date and
+optional time window, custom subject, message, and the mailing-list option —
+with English and German UI.
 
 Planned, roughly in order:
 
-1. Editing: on/off, start/end date and time, subject, message.
-2. Remember the password on the device (encrypted, never sent to a server for
+1. Remember the password on the device (encrypted, never sent to a server for
    storage) so the app opens straight into the state.
-3. A Thunderbird add-on using the same API, for people who never open a browser
+2. A Thunderbird add-on using the same API, for people who never open a browser
    tab for mail.
-4. Out-of-office driven by calendar entries. This is the one feature that cannot
+3. Out-of-office driven by calendar entries. This is the one feature that cannot
    be stateless: it needs either an opt-in, encrypted server-side credential or a
    local agent, so it is deliberately last.
 

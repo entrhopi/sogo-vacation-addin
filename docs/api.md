@@ -68,6 +68,14 @@ rejected with `400` details.
 
 - `startDate`/`endDate` are **Unix epoch seconds** (SOGo converts them to dates).
 - `startTime`/`endTime` are `"HH:MM"`.
+
+### Dates and timezones
+
+SOGo stores the date and the time separately and renders the date in the
+**server's** timezone, so send midnight of the calendar date in the timezone the
+mailbox uses. The web app computes midnight locally; keep the container's `TZ`
+equal to the users' zone (it follows `TZ` from Mailcow) or set `SOGoTimeZone` per
+user in SOGo if they differ.
 - `null` for a date/time removes the stored value.
 - `startDate` must not be after `endDate`, otherwise `400`.
 - Response: the same shape as `GET`.

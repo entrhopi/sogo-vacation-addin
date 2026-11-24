@@ -1,6 +1,7 @@
 import { useMemo, useState, type FormEvent } from 'react'
-import { ApiError, getVacation, type VacationResponse, type VacationView } from './api'
+import { ApiError, getVacation, putVacation, type VacationResponse } from './api'
 import { createTranslator, resolveLanguage, type Language, type MessageKey } from './i18n'
+import { VacationEditor } from './VacationEditor'
 
 type Status = 'idle' | 'loading' | 'ready' | 'error'
 
@@ -29,21 +30,6 @@ function rememberMailbox(mailbox: string): void {
   } catch {
     // Private mode or storage disabled: not remembering is acceptable.
   }
-}
-
-function formatDate(epochSeconds: number, language: Language): string {
-  return new Intl.DateTimeFormat(language === 'de' ? 'de-DE' : 'en-GB', {
-    dateStyle: 'medium',
-  }).format(new Date(epochSeconds * 1_000))
-}
-
-function period(vacation: VacationView, language: Language, t: ReturnType<typeof createTranslator>): string {
-  const from = vacation.startDateEnabled && vacation.startDate ? formatDate(vacation.startDate, language) : null
-  const to = vacation.endDateEnabled && vacation.endDate ? formatDate(vacation.endDate, language) : null
-  if (!from && !to) {
-    return t('notSet')
-  }
-  return `${from ?? '…'} → ${to ?? '…'}`
 }
 
 export function App() {
@@ -132,33 +118,20 @@ export function App() {
         </section>
       )}
 
-      {status === 'ready' && data && vacation && (
-        <section className="state">
+      {status === 'ready' && data && (
+        <>
           {!data.configured && <p className="hint">{t('notConfigured')}</p>}
-
-          <dl>
-            <dt>{t('subject')}</dt>
-            <dd>
-              {vacation.customSubjectEnabled && vacation.customSubject
-                ? vacation.customSubject
-                : t('noSubject')}
-            </dd>
-
-            <dt>{t('period')}</dt>
-            <dd>{period(vacation, language, t)}</dd>
-
-            <dt>{t('message')}</dt>
-            <dd className="state__message">{vacation.autoReplyText || '—'}</dd>
-          </dl>
-
-          <ul className="facts">
-            <li>{t('daysBetween', { days: vacation.daysBetweenResponse })}</li>
-            {vacation.ignoreLists && <li>{t('ignoreLists')}</li>}
-          </ul>
-        </section>
+          <VacationEditor
+            mailbox={mailbox.trim()}
+            data={data}
+            t={t}
+            onSave={async (patch) => {
+              const updated = await putVacation(mailbox.trim(), password, patch)
+              setData(updated)
+            }}
+          />
+        </>
       )}
-
-      <footer className="note note--muted">{t('noteReadOnly')}</footer>
     </main>
   )
 }

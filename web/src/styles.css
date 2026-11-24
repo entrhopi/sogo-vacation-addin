@@ -196,3 +196,80 @@ button:disabled {
   color: var(--muted);
   font-size: 12px;
 }
+
+.editor {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  background: var(--surface);
+}
+
+.switch {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto minmax(0, 0.7fr);
+  gap: 8px;
+  align-items: center;
+}
+
+.row__check {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.row input[type='date'],
+.row input[type='time'],
+.editor input[type='text'],
+.editor textarea {
+  font: inherit;
+  color: var(--fg);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 8px;
+  min-width: 0;
+}
+
+.editor textarea {
+  resize: vertical;
+}
+
+.editor input:disabled,
+.editor textarea:disabled {
+  opacity: 0.55;
+}
+
+.validation {
+  margin: 0;
+  color: var(--danger);
+  font-size: 12px;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.success {
+  color: var(--ok);
+  font-size: 12px;
+}
+
+@media (max-width: 420px) {
+  .row {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+}
