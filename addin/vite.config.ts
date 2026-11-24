@@ -11,6 +11,10 @@ import { defineConfig } from 'vite'
 const apiTarget = process.env.VITE_API_TARGET ?? 'http://127.0.0.1:8080'
 
 export default defineConfig({
+  // The add-in is served from a subpath (https://host/ooo/), so every asset URL
+  // must stay relative. With the default "/", the pane requests /assets/... from
+  // the mailcow vhost and never boots.
+  base: './',
   plugins: [react()],
   build: {
     outDir: 'dist',

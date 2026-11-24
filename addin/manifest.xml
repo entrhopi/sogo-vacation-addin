@@ -1,9 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  Development manifest. URLs point at the Vite dev server on localhost, which is
-  fine for sideloading inside Outlook on the same machine. The production
-  manifest (hosted under https://<mailcow-host>/ooo/) is generated in the
-  hosting step, because the URLs depend on your domain.
+  Manifest source for the add-in. URLs here point at the Vite dev server;
+  the middleware rewrites them to PUBLIC_BASE_URL when it serves the manifest,
+  so the deployed copy never mentions localhost.
 -->
 <OfficeApp
   xmlns="http://schemas.microsoft.com/office/appforoffice/1.1"
